@@ -27,6 +27,7 @@ PAD1_POS = (350, 360)  # początkowa pozycja zapisana w tupli
 # utworzenie powierzchni paletki, wypełnienie jej kolorem,
 pad1 = pygame.Surface([PAD_WIDTH, PAD_HEIGHT])
 pad1.fill(BLUE)
+
 # ustawienie prostokąta zawierającego paletkę w początkowej pozycji
 pad1_rect = pad1.get_rect()
 pad1_rect.x = PAD1_POS[0]
@@ -39,10 +40,10 @@ BALL_X_SPEED = 4  # prędkość pozioma x
 BALL_Y_SPEED = 4  # prędkość pionowa y
 GREEN = (0, 255, 0)  # kolor piłki
 # utworzenie powierzchni piłki, narysowanie piłki i wypełnienie kolorem
-pilka = pygame.Surface([BALL_WIDTH, BALL_HEIGHT], pygame.SRCALPHA, 32).convert_alpha()
-pygame.draw.ellipse(pilka, GREEN, [0, 0, BALL_WIDTH, BALL_HEIGHT])
+ball = pygame.Surface([BALL_WIDTH, BALL_HEIGHT], pygame.SRCALPHA, 32).convert_alpha()
+pygame.draw.ellipse(ball, GREEN, [0, 0, BALL_WIDTH, BALL_HEIGHT])
 # ustawienie prostokąta zawierającego piłkę w początkowej pozycji
-ball_rect = pilka.get_rect()
+ball_rect = ball.get_rect()
 ball_rect.x = WIDTH / 2
 ball_rect.y = HEIGHT / 2
 
@@ -52,36 +53,36 @@ fpsClock = pygame.time.Clock()  # zegar śledzący czas
 
 # pad ai ############################################################
 RED = (255, 0, 0)
-PALETKA_AI_POZ = (350, 20)  # początkowa pozycja zapisana w tupli
+AI_PAD_POS = (350, 20)  # początkowa pozycja zapisana w tupli
 # utworzenie powierzchni paletki, wypełnienie jej kolorem,
 padAI = pygame.Surface([PAD_WIDTH, PAD_HEIGHT])
 padAI.fill(RED)
 # ustawienie prostokąta zawierającego paletkę w początkowej pozycji
-padAI_prost = padAI.get_rect()
-padAI_prost.x = PALETKA_AI_POZ[0]
-padAI_prost.y = PALETKA_AI_POZ[1]
+ai_pad_rect = padAI.get_rect()
+ai_pad_rect.x = AI_PAD_POS[0]
+ai_pad_rect.y = AI_PAD_POS[1]
 # szybkość paletki AI
 AI_SPEED = 5
 
-# komunikaty tekstowe ###################################################
+# komunikaty textowe ###################################################
 # zmienne przechowujące punkty i funkcje wyświetlające punkty
-PKT_1 = '0'
-PKT_AI = '0'
+PLAYER_SCORE = '0'
+AI_SCORE = '0'
 fontObj = pygame.font.Font('freesansbold.ttf', 64)  # czcionka komunikatów
 
 
 def print_points1():
-    tekst1 = fontObj.render(PKT_1, True, (0, 0, 0))
-    tekst_prost1 = tekst1.get_rect()
-    tekst_prost1.center = (WIDTH / 2, HEIGHT * 0.75)
-    main_window.blit(tekst1, tekst_prost1)
+    text1 = fontObj.render(PLAYER_SCORE, True, (0, 0, 0))
+    text_player_rect = text1.get_rect()
+    text_player_rect.center = (WIDTH / 2, HEIGHT * 0.75)
+    main_window.blit(text1, text_player_rect)
 
 
 def print_pointsAI():
-    tekstAI = fontObj.render(PKT_AI, True, (0, 0, 0))
-    tekst_prostAI = tekstAI.get_rect()
-    tekst_prostAI.center = (WIDTH / 2, HEIGHT / 4)
-    main_window.blit(tekstAI, tekst_prostAI)
+    textAI = fontObj.render(AI_SCORE, True, (0, 0, 0))
+    text_ai_rect = textAI.get_rect()
+    text_ai_rect.center = (WIDTH / 2, HEIGHT / 4)
+    main_window.blit(textAI, text_ai_rect)
 
 # powtarzalność klawiszy (delay, interval)
 pygame.key.set_repeat(50, 25)
@@ -97,19 +98,19 @@ while True:
 
         # przechwyć ruch myszy
         if event.type == MOUSEMOTION:
-            myszaX, myszaY = event.pos  # współrzędne x, y kursora myszy
+            mouseX, mouseY = event.pos  # współrzędne x, y kursora myszy
 
             # oblicz przesunięcie paletki gracza
-            przesuniecie = myszaX - (PAD_WIDTH / 2)
+            shift = mouseX - (PAD_WIDTH / 2)
 
             # jeżeli wykraczamy poza okno gry w prawo
-            if przesuniecie > WIDTH - PAD_WIDTH:
-                przesuniecie = WIDTH - PAD_WIDTH
+            if shift > WIDTH - PAD_WIDTH:
+                shift = WIDTH - PAD_WIDTH
             # jeżeli wykraczamy poza okno gry w lewo
-            if przesuniecie < 0:
-                przesuniecie = 0
+            if shift < 0:
+                shift = 0
             # zaktualizuj położenie paletki w poziomie
-            pad1_rect.x = przesuniecie
+            pad1_rect.x = shift
 
         # przechwyć naciśnięcia klawiszy kursora
         if event.type == pygame.KEYDOWN:
@@ -137,26 +138,26 @@ while True:
         # BALL_Y_SPEED *= -1  # odwracamy kierunek ruchu pionowego piłki
         ball_rect.x = WIDTH / 2  # więc startuję ze środka
         ball_rect.y = HEIGHT / 2
-        PKT_1 = str(int(PKT_1) + 1)
+        PLAYER_SCORE = str(int(PLAYER_SCORE) + 1)
 
     if ball_rect.bottom >= HEIGHT:  # piłka uciekła dołem
         ball_rect.x = WIDTH / 2  # więc startuję ze środka
         ball_rect.y = HEIGHT / 2
-        PKT_AI = str(int(PKT_AI) + 1)
+        AI_SCORE = str(int(AI_SCORE) + 1)
 
     # AI (jak gra komputer)
     # jeżeli piłka ucieka na prawo, przesuń za nią paletkę
-    if ball_rect.centerx > padAI_prost.centerx:
-        padAI_prost.x += AI_SPEED
+    if ball_rect.centerx > ai_pad_rect.centerx:
+        ai_pad_rect.x += AI_SPEED
     # w przeciwnym wypadku przesuń w lewo
-    elif ball_rect.centerx < padAI_prost.centerx:
-        padAI_prost.x -= AI_SPEED
+    elif ball_rect.centerx < ai_pad_rect.centerx:
+        ai_pad_rect.x -= AI_SPEED
 
     # jeżeli piłka dotknie paletki AI, skieruj ją w przeciwną stronę
-    if ball_rect.colliderect(padAI_prost):
+    if ball_rect.colliderect(ai_pad_rect):
         BALL_Y_SPEED *= -1
         # uwzględnij nachodzenie paletki na piłkę (przysłonięcie)
-        ball_rect.top = padAI_prost.bottom
+        ball_rect.top = ai_pad_rect.bottom
 
     # jeżeli piłka dotknie paletki gracza, skieruj ją w przeciwną stronę
     if ball_rect.colliderect(pad1_rect):
@@ -172,10 +173,10 @@ while True:
 
     # narysuj w oknie gry paletki
     main_window.blit(pad1, pad1_rect)
-    main_window.blit(padAI, padAI_prost)
+    main_window.blit(padAI, ai_pad_rect)
 
     # narysuj w oknie piłkę
-    main_window.blit(pilka, ball_rect)
+    main_window.blit(ball, ball_rect)
 
     # zaktualizuj okno i wyświetl
     pygame.display.update()
