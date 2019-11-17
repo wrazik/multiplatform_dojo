@@ -4,6 +4,7 @@
 import pygame
 import sys
 from pygame.locals import *
+from enum import Enum
 
 # inicjacja modułu pygame
 pygame.init()
@@ -19,29 +20,55 @@ main_window = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 # tytuł okna gry
 pygame.display.set_caption('Prosty Pong')
 
-# pad gracza #########################################################
-PAD_WIDTH = 100  # szerokość
-PAD_HEIGHT = 20  # wysokość
-BLUE = (0, 0, 255)  # kolor paletki
-PAD1_POS = (350, 360)  # początkowa pozycja zapisana w tupli
-# utworzenie powierzchni paletki, wypełnienie jej kolorem,
-pad1 = pygame.Surface([PAD_WIDTH, PAD_HEIGHT])
-pad1.fill(BLUE)
+class Color:
+    GREEN = (0, 255, 0)
+    BLUE = (0, 0, 255)
+    RED = (255, 0, 0)
 
-# ustawienie prostokąta zawierającego paletkę w początkowej pozycji
-pad1_rect = pad1.get_rect()
-pad1_rect.x = PAD1_POS[0]
-pad1_rect.y = PAD1_POS[1]
+class Pad:
+    w = 100
+    h = 20
+    surface = {}
+    rect = {}
+
+    def __init__(self, pygame, color, x, y):
+        self.surface = pygame.Surface([self.w, self.h])
+        self.surface.fill(color)
+        self.rect = self.surface.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        
+    def collides_with(self, obj):
+        return self.rect.colliderect(obj)
+
+    def left(self):
+        self.rect.x -= 5
+        if self.rect.x < 0:
+            self.rect.x = 0
+
+    def right(self):
+        self.rect.x += 5
+        if self.rect.x > WIDTH - self.w:
+            self.rect.x = WIDTH - self.w
+
+    def paint(self, main_window):
+        main_window.blit(self.surface, self.rect)
+
+#PAD_WIDTH = 100  # szerokość
+#PAD_HEIGHT = 20  # wysokość
+#PAD1_POS = (350, 360)  # początkowa pozycja zapisana w tupli
+    
+pad1 = Pad(pygame, Color.BLUE, 350, 360)
+pad2 = Pad(pygame, Color.RED, 350, 20)
 
 # piłka #################################################################
 BALL_WIDTH = 20  # szerokość
 BALL_HEIGHT = 20  # wysokość
 BALL_X_SPEED = 4  # prędkość pozioma x
 BALL_Y_SPEED = 4  # prędkość pionowa y
-GREEN = (0, 255, 0)  # kolor piłki
 # utworzenie powierzchni piłki, narysowanie piłki i wypełnienie kolorem
 ball = pygame.Surface([BALL_WIDTH, BALL_HEIGHT], pygame.SRCALPHA, 32).convert_alpha()
-pygame.draw.ellipse(ball, GREEN, [0, 0, BALL_WIDTH, BALL_HEIGHT])
+pygame.draw.ellipse(ball, Color.GREEN, [0, 0, BALL_WIDTH, BALL_HEIGHT])
 # ustawienie prostokąta zawierającego piłkę w początkowej pozycji
 ball_rect = ball.get_rect()
 ball_rect.x = WIDTH / 2
@@ -51,16 +78,7 @@ ball_rect.y = HEIGHT / 2
 FPS = 30  # liczba klatek na sekundę
 fpsClock = pygame.time.Clock()  # zegar śledzący czas
 
-# pad ai ############################################################
-RED = (255, 0, 0)
-AI_PAD_POS = (350, 20)  # początkowa pozycja zapisana w tupli
-# utworzenie powierzchni paletki, wypełnienie jej kolorem,
-padAI = pygame.Surface([PAD_WIDTH, PAD_HEIGHT])
-padAI.fill(RED)
 # ustawienie prostokąta zawierającego paletkę w początkowej pozycji
-ai_pad_rect = padAI.get_rect()
-ai_pad_rect.x = AI_PAD_POS[0]
-ai_pad_rect.y = AI_PAD_POS[1]
 # szybkość paletki AI
 AI_SPEED = 5
 
@@ -76,7 +94,6 @@ def print_points1():
     text_player_rect = text1.get_rect()
     text_player_rect.center = (WIDTH / 2, HEIGHT * 0.75)
     main_window.blit(text1, text_player_rect)
-
 
 def print_pointsAI():
     textAI = fontObj.render(AI_SCORE, True, (0, 0, 0))
@@ -96,32 +113,12 @@ while True:
             pygame.quit()
             sys.exit()
 
-        # przechwyć ruch myszy
-        if event.type == MOUSEMOTION:
-            mouseX, mouseY = event.pos  # współrzędne x, y kursora myszy
-
-            # oblicz przesunięcie paletki gracza
-            shift = mouseX - (PAD_WIDTH / 2)
-
-            # jeżeli wykraczamy poza okno gry w prawo
-            if shift > WIDTH - PAD_WIDTH:
-                shift = WIDTH - PAD_WIDTH
-            # jeżeli wykraczamy poza okno gry w lewo
-            if shift < 0:
-                shift = 0
-            # zaktualizuj położenie paletki w poziomie
-            pad1_rect.x = shift
-
         # przechwyć naciśnięcia klawiszy kursora
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                pad1_rect.x -= 5
-                if pad1_rect.x < 0:
-                    pad1_rect.x = 0
+                pad1.left()
             if event.key == pygame.K_RIGHT:
-                pad1_rect.x += 5
-                if pad1_rect.x > WIDTH - PAD_WIDTH:
-                    pad1_rect.x = WIDTH - PAD_WIDTH
+                pad1.right()
 
     # ruch piłki ########################################################
     # przesuń piłkę po obsłużeniu zdarzeń
@@ -147,23 +144,23 @@ while True:
 
     # AI (jak gra komputer)
     # jeżeli piłka ucieka na prawo, przesuń za nią paletkę
-    if ball_rect.centerx > ai_pad_rect.centerx:
-        ai_pad_rect.x += AI_SPEED
+    if ball_rect.centerx > pad2.rect.centerx:
+        pad2.rect.x += AI_SPEED
     # w przeciwnym wypadku przesuń w lewo
-    elif ball_rect.centerx < ai_pad_rect.centerx:
-        ai_pad_rect.x -= AI_SPEED
+    elif ball_rect.centerx < pad2.rect.centerx:
+        pad2.rect.x -= AI_SPEED
 
     # jeżeli piłka dotknie paletki AI, skieruj ją w przeciwną stronę
-    if ball_rect.colliderect(ai_pad_rect):
+    if ball_rect.colliderect(pad2.rect):
         BALL_Y_SPEED *= -1
         # uwzględnij nachodzenie paletki na piłkę (przysłonięcie)
-        ball_rect.top = ai_pad_rect.bottom
+        ball_rect.top = pad2.rect.bottom
 
     # jeżeli piłka dotknie paletki gracza, skieruj ją w przeciwną stronę
-    if ball_rect.colliderect(pad1_rect):
+    if ball_rect.colliderect(pad1.rect):
         BALL_Y_SPEED *= -1
         # zapobiegaj przysłanianiu paletki przez piłkę
-        ball_rect.bottom = pad1_rect.top
+        ball_rect.bottom = pad1.rect.top
 
     # rysowanie obiektów ################################################
     main_window.fill(LT_BLUE)  # wypełnienie okna gry kolorem
@@ -172,8 +169,8 @@ while True:
     print_pointsAI()  # wyświetl punkty AI
 
     # narysuj w oknie gry paletki
-    main_window.blit(pad1, pad1_rect)
-    main_window.blit(padAI, ai_pad_rect)
+    pad1.paint(main_window)
+    pad2.paint(main_window)
 
     # narysuj w oknie piłkę
     main_window.blit(ball, ball_rect)
@@ -184,4 +181,3 @@ while True:
     # zaktualizuj zegar po narysowaniu obiektów
     fpsClock.tick(FPS)
 
-# KONIEC
