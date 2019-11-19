@@ -3,9 +3,31 @@
 
 import pygame
 import sys
+import sockets
+import threading
+import zmq
+import time
+
 from pygame.locals import *
 from enum import Enum
 from pad import Pad
+
+def receive():
+    context = zmq.Context()
+    socket = context.socket(zmq.REP)
+    socket.bind("tcp://*:8080") 
+
+    while True:
+        #  Wait for next request from client
+        message = socket.recv()
+        print("Received request: %s" % message)
+
+        #  Do some 'work'
+        time.sleep(1)
+
+        print("Waiting...")
+
+receive()
 
 # inicjacja modułu pygame
 pygame.init()
@@ -15,6 +37,12 @@ WIDTH = 800
 HEIGHT = 400
 # kolor okna gry, składowe RGB zapisane w tupli
 LT_BLUE = (230, 255, 255)
+
+
+
+class GAME_STATE(Enum):
+   WAITING = 1 
+   RUNNING = 2
 
 # powierzchnia do rysowania, czyli inicjacja okna gry
 main_window = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
@@ -27,10 +55,6 @@ class Color:
     RED = (255, 0, 0)
 
 
-#PAD_WIDTH = 100  # szerokość
-#PAD_HEIGHT = 20  # wysokość
-#PAD1_POS = (350, 360)  # początkowa pozycja zapisana w tupli
-    
 pad1 = Pad(pygame, Color.BLUE, 350, 360)
 pad2 = Pad(pygame, Color.RED, 350, 20)
 
@@ -46,6 +70,9 @@ pygame.draw.ellipse(ball, Color.GREEN, [0, 0, BALL_WIDTH, BALL_HEIGHT])
 ball_rect = ball.get_rect()
 ball_rect.x = WIDTH / 2
 ball_rect.y = HEIGHT / 2
+
+
+# TODO: send game state, receive pad request
 
 # ustawienia animacji ###################################################
 FPS = 30  # liczba klatek na sekundę
@@ -77,7 +104,10 @@ def print_pointsAI():
 # powtarzalność klawiszy (delay, interval)
 pygame.key.set_repeat(50, 25)
 
-# pętla główna programu
+'''
+pad=1, direction=-1
+'''
+
 while True:
     # obsługa zdarzeń generowanych przez gracza
     for event in pygame.event.get():
