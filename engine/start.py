@@ -12,9 +12,10 @@ from pygame.locals import *
 from enum import Enum
 from pad import Pad
 
-def receive():
+def start_zmq_server():
+    print("Starting zmq server...")
     context = zmq.Context()
-    socket = context.socket(zmq.REP)
+    socket = context.socket(zmq.PULL)
     socket.bind("tcp://*:8080") 
 
     while True:
@@ -26,8 +27,6 @@ def receive():
         time.sleep(1)
 
         print("Waiting...")
-
-receive()
 
 # inicjacja modułu pygame
 pygame.init()
@@ -108,6 +107,9 @@ pygame.key.set_repeat(50, 25)
 pad=1, direction=-1
 '''
 
+x = threading.Thread(target=start_zmq_server, daemon=True)
+x.start()
+
 while True:
     # obsługa zdarzeń generowanych przez gracza
     for event in pygame.event.get():
@@ -183,4 +185,3 @@ while True:
 
     # zaktualizuj zegar po narysowaniu obiektów
     fpsClock.tick(FPS)
-
