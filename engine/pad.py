@@ -5,12 +5,9 @@ WIDTH = 800
 HEIGHT = 400
 
 class Pad:
-    w = 100
-    h = 20
-    surface = {}
-    rect = {}
-
     def __init__(self, pygame, color, x, y):
+        self.w = 100
+        self.h = 20
         self.surface = pygame.Surface([self.w, self.h])
         self.surface.fill(color)
         self.rect = self.surface.get_rect()

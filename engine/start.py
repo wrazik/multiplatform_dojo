@@ -46,6 +46,39 @@ def print_pointsAI(fontObj, main_window):
     text_ai_rect.center = (WIDTH / 2, HEIGHT / 4)
     main_window.blit(textAI, text_ai_rect)
 
+class GameState:
+    def __init__(self, objects):
+        self.objects = objects
+
+    def toString(self):
+        output = ""
+        for obj in self.objects:
+            output += obj + ","
+
+class Ball:
+    def __init__(self, pygame):
+        WIDTH = 800
+        HEIGHT = 400
+        
+        self.w = 20
+        self.h = 20
+        self.x_speed = 4
+        self.y_speed = 4
+        self.ball = pygame.Surface([self.w, self.h], pygame.SRCALPHA, 32).convert_alpha()
+        pygame.draw.ellipse(self.ball, Color.GREEN, [0, 0, self.w, self.h])
+        self.ball_rect = self.ball.get_rect()
+        self.ball_rect.x = WIDTH / 2
+        self.ball_rect.y = HEIGHT / 2
+
+    def update_pos(self):
+        self.ball_rect.move_ip(self.x_speed, self.y_speed)
+
+    def bounce_x(self):
+        self.x_speed *= -1
+
+    def bounce_y(self):
+        self.y_speed *= -1
+
 if __name__== "__main__":
     # inicjacja modułu pygame
     pygame.init()
@@ -57,16 +90,7 @@ if __name__== "__main__":
 
     pad1 = Pad(pygame, Color.BLUE, 350, 360)
     pad2 = Pad(pygame, Color.RED, 350, 20)
-
-    BALL_WIDTH = 20
-    BALL_HEIGHT = 20
-    BALL_X_SPEED = 4
-    BALL_Y_SPEED = 4
-    ball = pygame.Surface([BALL_WIDTH, BALL_HEIGHT], pygame.SRCALPHA, 32).convert_alpha()
-    pygame.draw.ellipse(ball, Color.GREEN, [0, 0, BALL_WIDTH, BALL_HEIGHT])
-    ball_rect = ball.get_rect()
-    ball_rect.x = WIDTH / 2
-    ball_rect.y = HEIGHT / 2
+    ball = Ball(pygame)
 
     FPS = 30
     fpsClock = pygame.time.Clock()
@@ -92,13 +116,16 @@ if __name__== "__main__":
                     pad1.left()
                 if event.key == pygame.K_RIGHT:
                     pad1.right()
+        
 
-        ball_rect.move_ip(BALL_X_SPEED, BALL_Y_SPEED)
+        
+        ball.update_pos()
+        ball_rect = ball.ball_rect
 
         if ball_rect.right >= WIDTH:
-            BALL_X_SPEED *= -1
+            ball.bounce_x()
         if ball_rect.left <= 0:
-            BALL_X_SPEED *= -1
+            ball.bounce_x()
 
         if ball_rect.top <= 0: 
             ball_rect.x = WIDTH / 2 
@@ -116,11 +143,11 @@ if __name__== "__main__":
             pad2.rect.x -= AI_SPEED
 
         if ball_rect.colliderect(pad2.rect):
-            BALL_Y_SPEED *= -1
+            ball.bounce_y();
             ball_rect.top = pad2.rect.bottom
 
         if ball_rect.colliderect(pad1.rect):
-            BALL_Y_SPEED *= -1
+            ball.bounce_y();
             ball_rect.bottom = pad1.rect.top
 
         main_window.fill(Color.LT_BLUE) 
@@ -131,7 +158,7 @@ if __name__== "__main__":
         pad1.paint(main_window)
         pad2.paint(main_window)
 
-        main_window.blit(ball, ball_rect)
+        main_window.blit(ball.ball, ball_rect)
 
         pygame.display.update()
 
