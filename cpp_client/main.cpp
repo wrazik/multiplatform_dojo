@@ -11,20 +11,22 @@ int main(int argc, char *argv[]) {
   zmqpp::context context;
 
   // generate a push socket
-  zmqpp::socket_type type = zmqpp::socket_type::push;
+  zmqpp::socket_type type = zmqpp::socket_type::subscribe;
   zmqpp::socket socket (context, type);
+
+  socket.subscribe("42");
 
   // open the connection
   cout << "Opening connection to " << endpoint << "..." << endl;
   socket.connect(endpoint);
+  while(true) {
+    zmqpp::message message;
+    socket.receive(message);
 
-  // send a message
-  cout << "Sending text and a number..." << endl;
-  zmqpp::message message;
-  // compose a message from a string and a number
-  message << "Hello World!" << 42;
-  socket.send(message);
-  
-  cout << "Sent message." << endl;
-  cout << "Finished." << endl;
+    // Read as a string
+    string text;
+    message >> text;
+
+    cout << "[RECV] " <<  text << "\n" << endl;
+  }
 }

@@ -29,4 +29,7 @@ class Pad:
 
     def paint(self, main_window):
         main_window.blit(self.surface, self.rect)
+    
+    def toString(self):
+        return "pad %d %d" % (self.rect.x, self.rect.y)
 

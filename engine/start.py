@@ -11,28 +11,22 @@ import time
 from pygame.locals import *
 from enum import Enum
 from pad import Pad
+from ball import Ball
+from color import Color
 
-class Color:
-    GREEN = (0, 255, 0)
-    BLUE = (0, 0, 255)
-    RED = (255, 0, 0)
-    LT_BLUE = (230, 255, 255)
-
-def start_zmq_server():
+def start_zmq_server(state):
     print("Starting zmq server...")
     context = zmq.Context()
-    socket = context.socket(zmq.PULL)
+    socket = context.socket(zmq.PUB)
     socket.bind("tcp://*:8080") 
 
     while True:
         #  Wait for next request from client
-        message = socket.recv()
-        print("Received request: %s" % message)
-
+        topic = 42
+        messagedata=state.toString()
+        socket.send_string("%d %s" % (topic, messagedata))
         #  Do some 'work'
-        time.sleep(1)
-
-        print("Waiting...")
+        time.sleep(0.1)
 
 def print_points1(fontObj, main_window):
     text1 = fontObj.render(PLAYER_SCORE, True, (0, 0, 0))
@@ -53,31 +47,8 @@ class GameState:
     def toString(self):
         output = ""
         for obj in self.objects:
-            output += obj + ","
-
-class Ball:
-    def __init__(self, pygame):
-        WIDTH = 800
-        HEIGHT = 400
-        
-        self.w = 20
-        self.h = 20
-        self.x_speed = 4
-        self.y_speed = 4
-        self.ball = pygame.Surface([self.w, self.h], pygame.SRCALPHA, 32).convert_alpha()
-        pygame.draw.ellipse(self.ball, Color.GREEN, [0, 0, self.w, self.h])
-        self.ball_rect = self.ball.get_rect()
-        self.ball_rect.x = WIDTH / 2
-        self.ball_rect.y = HEIGHT / 2
-
-    def update_pos(self):
-        self.ball_rect.move_ip(self.x_speed, self.y_speed)
-
-    def bounce_x(self):
-        self.x_speed *= -1
-
-    def bounce_y(self):
-        self.y_speed *= -1
+            output += obj.toString() + ","
+        return output
 
 if __name__== "__main__":
     # inicjacja modułu pygame
@@ -91,6 +62,7 @@ if __name__== "__main__":
     pad1 = Pad(pygame, Color.BLUE, 350, 360)
     pad2 = Pad(pygame, Color.RED, 350, 20)
     ball = Ball(pygame)
+    state = GameState([pad1, pad2, ball])
 
     FPS = 30
     fpsClock = pygame.time.Clock()
@@ -102,7 +74,7 @@ if __name__== "__main__":
     fontObj = pygame.font.Font('freesansbold.ttf', 64)  
 
     pygame.key.set_repeat(50, 25)
-    x = threading.Thread(target=start_zmq_server, daemon=True)
+    x = threading.Thread(target=start_zmq_server, args=(state,), daemon=True)
     x.start()
 
     while True:
@@ -117,26 +89,17 @@ if __name__== "__main__":
                 if event.key == pygame.K_RIGHT:
                     pad1.right()
         
-
-        
         ball.update_pos()
         ball_rect = ball.ball_rect
-
-        if ball_rect.right >= WIDTH:
-            ball.bounce_x()
-        if ball_rect.left <= 0:
-            ball.bounce_x()
-
-        if ball_rect.top <= 0: 
-            ball_rect.x = WIDTH / 2 
-            ball_rect.y = HEIGHT / 2
+        
+        if ball.did_hit_top():
+            ball.reset()
             PLAYER_SCORE = str(int(PLAYER_SCORE) + 1)
 
-        if ball_rect.bottom >= HEIGHT: 
-            ball_rect.x = WIDTH / 2
-            ball_rect.y = HEIGHT / 2
+        if ball.did_hit_bottom():
+            ball.reset()
             AI_SCORE = str(int(AI_SCORE) + 1)
-
+# rearted AI
         if ball_rect.centerx > pad2.rect.centerx:
             pad2.rect.x += AI_SPEED
         elif ball_rect.centerx < pad2.rect.centerx:
@@ -157,6 +120,7 @@ if __name__== "__main__":
 
         pad1.paint(main_window)
         pad2.paint(main_window)
+        ball.paint(main_window)
 
         main_window.blit(ball.ball, ball_rect)
 
